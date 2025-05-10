@@ -1,0 +1,465 @@
+﻿@page "{id}"
+@model Prisma.Pages.News.AnalyzeModel
+@{
+    ViewData["Title"] = $"Analisi: {Model.Article?.Title}";
+}
+
+<link rel="stylesheet" href="~/css/analysis.css" asp-append-version="true" />
+
+<div class="analysis-page">
+    @if (Model.IsLoading)
+    {
+        <div class="loading-overlay">
+            <div class="prism-loader">
+                <div class="prism">
+                    <div class="prism-face front"></div>
+                    <div class="prism-face back"></div>
+                    <div class="prism-face right"></div>
+                    <div class="prism-face left"></div>
+                    <div class="prism-face top"></div>
+                    <div class="prism-face bottom"></div>
+                </div>
+                <div class="processing-text">Decostruzione in corso...</div>
+            </div>
+        </div>
+    }
+    else if (Model.HasError)
+    {
+        <div class="error-container">
+            <div class="error-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h2>Si è verificato un errore</h2>
+            <p>@Model.ErrorMessage</p>
+            <a href="/" class="btn btn-primary">Torna alla home</a>
+        </div>
+    }
+    else
+    {
+        <div class="analysis-header" style="--theme-color: @Model.CategoryMeta.ThemeColor">
+            <div class="container">
+                <div class="category-badge">
+                    <i class="bi @Model.CategoryMeta.IconClass"></i>
+                    <span>@Model.CategoryMeta.Category</span>
+                </div>
+                <h1 class="article-title">@Model.Article.Title</h1>
+                <div class="article-meta">
+                    <span class="author">
+                        <i class="bi bi-person-circle"></i> @Model.Article.Author
+                    </span>
+                    <span class="date">
+                        <i class="bi bi-calendar3"></i> @Model.Article.FormattedDate
+                    </span>
+                    <span class="source">
+                        <i class="bi bi-link-45deg"></i>
+                        <a href="@Model.Article.Url" target="_blank" rel="noopener">Articolo originale</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="analysis-content">
+            <div class="container">
+                <div class="analysis-layout">
+                    <!-- Colonna sinistra: articolo originale e statistiche -->
+                    <div class="original-article-column">
+                        <div class="article-summary sticky-card">
+                            <h2 class="section-title">
+                                <i class="bi bi-file-text"></i> Articolo originale
+                            </h2>
+                            <div class="article-content">
+                                <p>@Model.Article.Summary</p>
+                                <a href="@Model.Article.Url" class="original-link" target="_blank">
+                                    <i class="bi bi-box-arrow-up-right"></i> Leggi l'articolo completo
+                                </a>
+                            </div>
+
+                            <div class="objectivity-meter">
+                                <div class="meter-label">
+                                    <span>Indice di oggettività</span>
+                                    <span class="score-value">@Model.Analysis.ObjectivityScore%</span>
+                                </div>
+                                <div class="meter-bar">
+                                    <div class="meter-fill" style="width: @(Model.Analysis.ObjectivityScore)%"></div>
+                                </div>
+                                <div class="meter-scale">
+                                    <span>Soggettivo</span>
+                                    <span>Oggettivo</span>
+                                </div>
+                            </div>
+
+                            <div class="tones-analysis">
+                                <h3 class="subsection-title">Tono emotivo</h3>
+                                <div class="tones-chart">
+                                    <div class="tone-item">
+                                        <div class="tone-label">Incertezza</div>
+                                        <div class="tone-bar-container">
+                                            <div class="tone-bar" style="width: 35%"></div>
+                                            <span class="tone-value">35%</span>
+                                        </div>
+                                    </div>
+                                    <div class="tone-item">
+                                        <div class="tone-label">Allarme</div>
+                                        <div class="tone-bar-container">
+                                            <div class="tone-bar" style="width: 45%"></div>
+                                            <span class="tone-value">45%</span>
+                                        </div>
+                                    </div>
+                                    <div class="tone-item">
+                                        <div class="tone-label">Positività</div>
+                                        <div class="tone-bar-container">
+                                            <div class="tone-bar" style="width: 20%"></div>
+                                            <span class="tone-value">20%</span>
+                                        </div>
+                                    </div>
+                                    <div class="tone-item">
+                                        <div class="tone-label">Autorità</div>
+                                        <div class="tone-bar-container">
+                                            <div class="tone-bar" style="width: 70%"></div>
+                                            <span class="tone-value">70%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="key-questions">
+                                <h3 class="subsection-title">Domande chiave</h3>
+                                <ul class="questions-list">
+                                    @if (Model.CategoryMeta.KeyQuestions.Any())
+                                    {
+                                        foreach (var question in Model.CategoryMeta.KeyQuestions)
+                                        {
+                                            <li><i class="bi bi-question-circle"></i> @question</li>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <li><i class="bi bi-question-circle"></i> Come vengono presentate le diverse prospettive?</li>
+                                        <li><i class="bi bi-question-circle"></i> Quali elementi di contesto mancano?</li>
+                                        <li><i class="bi bi-question-circle"></i> Quali tecniche retoriche sono utilizzate?</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colonna destra: analisi Gemini -->
+                    <div class="analysis-results-column">
+                        <div class="analysis-intro">
+                            <h2 class="section-title">Decostruzione critica</h2>
+                            <p class="intro-text">
+                                Analizziamo l'articolo attraverso una lente critica per identificare bias, tecniche retoriche
+                                e prospettive. L'obiettivo è stimolare una lettura consapevole, non fornire un giudizio
+                                definitivo sul contenuto.
+                            </p>
+
+                            <!-- Toggle navigation tabs -->
+                            <div class="analysis-tabs">
+                                <button class="tab-button active" data-target="bias-section">
+                                    <i class="bi bi-eyeglasses"></i> Bias
+                                </button>
+                                <button class="tab-button" data-target="rhetoric-section">
+                                    <i class="bi bi-chat-quote"></i> Retorica
+                                </button>
+                                <button class="tab-button" data-target="context-section">
+                                    <i class="bi bi-arrows-angle-expand"></i> Contesto
+                                </button>
+                                <button class="tab-button" data-target="alternative-section">
+                                    <i class="bi bi-shuffle"></i> Alternative
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Bias Analysis Section -->
+                        <div class="analysis-section active" id="bias-section">
+                            <h3 class="analysis-section-title">
+                                <i class="bi bi-eyeglasses"></i> Bias identificati
+                            </h3>
+
+                            <div class="bias-cards">
+                                @foreach (var bias in Model.Analysis.DetectedBiases)
+                                {
+                                    <div class="bias-card severity-@bias.Severity.ToLower()">
+                                        <div class="bias-header">
+                                            <h4 class="bias-title">@bias.BiasType</h4>
+                                            <span class="bias-severity">@bias.Severity</span>
+                                        </div>
+                                        <p class="bias-description">@bias.Description</p>
+                                        <div class="bias-examples">
+                                            <h5>Esempi nel testo:</h5>
+                                            <ul>
+                                                @foreach (var example in bias.Examples)
+                                                {
+                                                    <li>
+                                                        <div class="example-quote">@example</div>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                        <div class="bias-impact">
+                                            <h5>Impatto:</h5>
+                                            <p>@bias.Impact</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="section-footer">
+                                <div class="tooltip-container">
+                                    <i class="bi bi-info-circle"></i>
+                                    <div class="tooltip-text">
+                                        I bias sono distorsioni cognitive che influenzano il modo in cui interpretiamo le informazioni.
+                                        Possono essere intenzionali o inconsci.
+                                    </div>
+                                </div>
+                                <button class="action-button" id="common-biases-toggle">
+                                    <i class="bi bi-list-check"></i>
+                                    <span>Bias comuni in questa categoria</span>
+                                </button>
+                            </div>
+
+                            <div class="common-biases-panel" style="display: none;">
+                                <div class="panel-header">
+                                    <h4>Bias comuni negli articoli di @Model.CategoryMeta.Category</h4>
+                                    <button class="close-button"><i class="bi bi-x-lg"></i></button>
+                                </div>
+                                <div class="panel-content">
+                                    <ul class="common-biases-list">
+                                        @foreach (var bias in Model.CategoryMeta.CommonBiases)
+                                        {
+                                            <li>
+                                                <strong>@bias.Name:</strong>
+                                                <span>@bias.Description</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rhetorical Techniques Section -->
+                        <div class="analysis-section" id="rhetoric-section">
+                            <h3 class="analysis-section-title">
+                                <i class="bi bi-chat-quote"></i> Tecniche retoriche
+                            </h3>
+
+                            <div class="rhetoric-timeline">
+                                @foreach (var technique in Model.Analysis.RhetoricalTechniques)
+                                {
+                                    <div class="rhetoric-item">
+                                        <div class="rhetoric-icon">
+                                            <i class="bi bi-lightning"></i>
+                                        </div>
+                                        <div class="rhetoric-content">
+                                            <h4 class="rhetoric-title">@technique.Technique</h4>
+                                            <p class="rhetoric-description">@technique.Description</p>
+
+                                            <div class="rhetoric-examples">
+                                                <h5>Esempi:</h5>
+                                                <ul>
+                                                    @foreach (var example in technique.Examples)
+                                                    {
+                                                        <li>
+                                                            <div class="example-quote">@example</div>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
+
+                                            <div class="rhetoric-purpose">
+                                                <span class="purpose-label">Scopo:</span>
+                                                <span class="purpose-value">@technique.Purpose</span>
+                                            </div>
+
+                                            <div class="rhetoric-effect">
+                                                <span class="effect-label">Effetto:</span>
+                                                <span class="effect-value">@technique.Effect</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="rhetoric-quiz">
+                                <h4 class="quiz-title">Metti alla prova le tue conoscenze</h4>
+                                <div class="quiz-question">
+                                    <p>Quale di queste tecniche retoriche viene utilizzata nell'articolo?</p>
+                                    <div class="quiz-options">
+                                        <label class="quiz-option">
+                                            <input type="radio" name="rhetoric-quiz" value="appeal">
+                                            <span class="option-text">Appello all'emozione</span>
+                                        </label>
+                                        <label class="quiz-option">
+                                            <input type="radio" name="rhetoric-quiz" value="authority">
+                                            <span class="option-text">Appello all'autorità</span>
+                                        </label>
+                                        <label class="quiz-option">
+                                            <input type="radio" name="rhetoric-quiz" value="strawman">
+                                            <span class="option-text">Argomento fantoccio</span>
+                                        </label>
+                                    </div>
+                                    <button class="quiz-submit">Verifica</button>
+                                    <div class="quiz-feedback" style="display: none;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Context Section -->
+                        <div class="analysis-section" id="context-section">
+                            <h3 class="analysis-section-title">
+                                <i class="bi bi-arrows-angle-expand"></i> Contesto mancante
+                            </h3>
+
+                            <div class="context-analysis">
+                                <div class="context-diagram">
+                                    <div class="diagram-center">
+                                        <i class="bi bi-newspaper"></i>
+                                        <span>Articolo</span>
+                                    </div>
+                                    <div class="diagram-items">
+                                        @foreach (var context in Model.Analysis.MissingContext)
+                                        {
+                                            <div class="diagram-item">
+                                                <div class="item-content">
+                                                    <i class="bi bi-plus-circle"></i>
+                                                    <span>@context</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="key-takeaways">
+                                    <h4 class="takeaways-title">Considerazioni chiave</h4>
+                                    <ul class="takeaways-list">
+                                        @foreach (var takeaway in Model.Analysis.KeyTakeaways)
+                                        {
+                                            <li>
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>@takeaway</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+
+                                <div class="missing-perspectives">
+                                    <h4>Amplia la tua lettura</h4>
+                                    <p class="perspective-intro">
+                                        Per una comprensione più completa dell'argomento, considera queste fonti alternative:
+                                    </p>
+                                    <div class="recommended-sources">
+                                        <a href="#" class="source-card">
+                                            <i class="bi bi-journal"></i>
+                                            <span>Approfondimento storico</span>
+                                        </a>
+                                        <a href="#" class="source-card">
+                                            <i class="bi bi-bar-chart"></i>
+                                            <span>Dati statistici</span>
+                                        </a>
+                                        <a href="#" class="source-card">
+                                            <i class="bi bi-people"></i>
+                                            <span>Prospettive diverse</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alternative Perspectives Section -->
+                        <div class="analysis-section" id="alternative-section">
+                            <h3 class="analysis-section-title">
+                                <i class="bi bi-shuffle"></i> Prospettive alternative
+                            </h3>
+
+                            <div class="perspective-analysis">
+                                <div class="perspective-intro">
+                                    <p>Un articolo più equilibrato potrebbe includere:</p>
+                                </div>
+
+                                <div class="perspective-content">
+                                    <p>@Model.Analysis.AlternativePerspective</p>
+                                </div>
+
+                                <div class="reframing-exercise">
+                                    <h4>Esercizio di reframing</h4>
+                                    <p>Prova a riscrivere il titolo dell'articolo da una prospettiva diversa:</p>
+
+                                    <div class="reframing-input">
+                                        <input type="text" class="form-control" placeholder="Riscrivi il titolo qui..." />
+                                        <button class="btn btn-primary">Confronta</button>
+                                    </div>
+
+                                    <div class="reframing-comparison" style="display: none;">
+                                        <div class="comparison-item original">
+                                            <h5>Titolo originale</h5>
+                                            <p>@Model.Article.Title</p>
+                                        </div>
+                                        <div class="comparison-item reframed">
+                                            <h5>La tua versione</h5>
+                                            <p class="reframed-title"></p>
+                                        </div>
+                                        <div class="comparison-item ai-suggestion">
+                                            <h5>Suggerimento alternativo</h5>
+                                            <p>Titolo riformulato in modo più neutrale</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="analysis-actions">
+                            <button class="btn btn-outline-secondary share-button">
+                                <i class="bi bi-share"></i> Condividi analisi
+                            </button>
+                            <button class="btn btn-primary save-button">
+                                <i class="bi bi-bookmark"></i> Salva analisi
+                            </button>
+                        </div>
+
+                        <!-- Compare with other articles -->
+                        <div class="similar-articles">
+                            <h3 class="section-title">
+                                <i class="bi bi-grid"></i> Confronta con altre prospettive
+                            </h3>
+                            <div class="articles-row">
+                                <div class="similar-article-card">
+                                    <div class="article-source opposition">Prospettiva opposta</div>
+                                    <h4>Titolo di un articolo con visione opposta</h4>
+                                    <p>Breve estratto dell'articolo con una visione diversa sullo stesso tema...</p>
+                                    <a href="#" class="compare-link">Confronta</a>
+                                </div>
+                                <div class="similar-article-card">
+                                    <div class="article-source neutral">Prospettiva neutrale</div>
+                                    <h4>Titolo di un articolo con visione neutrale</h4>
+                                    <p>Breve estratto dell'articolo con una visione equilibrata sullo stesso tema...</p>
+                                    <a href="#" class="compare-link">Confronta</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Concept Map Modal -->
+        <div class="concept-map-modal" id="concept-map-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Mappa concettuale dell'articolo</h2>
+                    <button class="close-modal"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="concept-map-container">
+                        <div class="concept-map" id="concept-map"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="~/js/analysis.js" asp-append-version="true"></script>
+}
