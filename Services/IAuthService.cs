@@ -1,4 +1,4 @@
-using PrismaNews.Models;
+using Prisma.Models;
 
 namespace PrismaNews.Services
 {

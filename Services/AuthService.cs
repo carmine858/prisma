@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using PrismaNews.Data;
-using PrismaNews.Models;
+using Prisma.Data;
+using Prisma.Models;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,10 +8,10 @@ namespace PrismaNews.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly PrismaDbContext _context;
         private readonly IEmailService _emailService;
 
-        public AuthService(ApplicationDbContext context, IEmailService emailService)
+        public AuthService(PrismaDbContext context, IEmailService emailService)
         {
             _context = context;
             _emailService = emailService;

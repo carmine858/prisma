@@ -1,32 +1,52 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using PrismaNews.Data;
+using Prisma.Data;
+using Prisma.Services;
 using PrismaNews.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Aggiungi servizi al container
+// Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+
+// Add SQLite Database
+builder.Services.AddDbContext<PrismaDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configura l'autenticazione
+// Add HttpClient and Guardian API Service
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<GuardianApiService>();
+builder.Services.AddScoped<INewsService, GuardianNewsAdapter>();
+builder.Services.AddScoped<GeminiService>();
+builder.Services.AddScoped<PromptService>();
+builder.Services.AddScoped<AnalysisService>();
+
+// Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
     });
 
-// Registra il servizio di autenticazione
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+// Add authorization policies if needed
+builder.Services.AddAuthorization(options =>
+{
+    // Example: Require authenticated users for certain areas
+    options.AddPolicy("RequireAuthenticatedUser", policy =>
+        policy.RequireAuthenticatedUser());
+});
 
 var app = builder.Build();
 
-// Configura la pipeline di richiesta HTTP
-if (!app.Environment.IsDevelopment())
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
@@ -42,13 +62,20 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
-// Crea il database se non esiste
+// Ensure the database is created
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    // Commenta la seguente riga se usi le migrazioni
-    // context.Database.EnsureCreated();
+    try
+    {
+        var context = services.GetRequiredService<PrismaDbContext>();
+        context.Database.EnsureCreated();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while creating the database.");
+    }
 }
 
 app.Run();
